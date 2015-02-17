@@ -442,7 +442,7 @@ walkabout.init(getDefaultCamera())
 
 # Use options below to turn on and off floor and wall checking
 walkabout.setFloorCheck(True)
-walkabout.setWallCheck(False)
+walkabout.setWallCheck(True)
 
 # Sets how high you can climb as a ratio of your body height.
 # 0.4 is default and means you can climb things that are 40% of your height
