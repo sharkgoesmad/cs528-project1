@@ -48,7 +48,7 @@ cam.setPosition(4, 0, -3)
 scene.setBackgroundColor(Color(0, 0, 0, 1))
 
 #set the far clipping plane to 1000 meters away
-setNearFarZ(0.1, 100)
+setNearFarZ(0.1, 1000)
 
 # create a skybox
 skybox = Skybox()
