@@ -24,10 +24,11 @@ from toggleInteract import ToggleInteract
 
 # constants
 SOUND_FACTOR = 1.0
-BGMUSIC_VOL = 0.008
+BGMUSIC_VOL = 0.8
 HUMAN_SCALE = 1.0
 INSECT_SCALE = 20.0
 NAVI_SPEED_MOD = 2.0
+INTERACT_DIST = 3.0
 
 BACKDOOR_POS = Vector3(4.3, 0.0, -3.0)
 FRONTDOOR_POS = Vector3(7.5, 0.0, -8.0)
@@ -46,10 +47,10 @@ cam.setPosition(4, 0, -3)
 # black background
 scene.setBackgroundColor(Color(0, 0, 0, 1))
 
-#set the far clipping plane to 500 meters away
-setNearFarZ(0.1, 500)
+#set the far clipping plane to 1000 meters away
+setNearFarZ(0.1, 100)
 
-
+# create a skybox
 skybox = Skybox()
 skybox.loadCubeMap("models/box", "png")
 scene.setSkyBox(skybox)
@@ -80,10 +81,12 @@ house.setScale(Vector3(0.0254, 0.0254, 0.0254))
 # put everything under a single node for easier control
 everything.addChild(house)
 
-# start the user off inside the front door
-#everything.setPosition(Vector3(0, 0.0, 7.0))
 
+# ******************************************************************************
+# ********************************* MODELS *************************************
+# ******************************************************************************
 
+# turntable
 turntableModel = ModelInfo()
 turntableModel.name = "turntable"
 turntableModel.path = "models/turntable.fbx"
@@ -95,7 +98,7 @@ everything.addChild(turntable)
 turntable.setPosition(9.8, 0.9, -0.4)
 turntable.yaw(radians(90))
 
-
+# speaker
 speakerModel = ModelInfo()
 speakerModel.name = "speaker"
 speakerModel.path = "models/speaker.fbx"
@@ -118,7 +121,7 @@ speaker2.setPosition(9.0, 0, -17)
 speaker2.yaw(radians(45))
 
 
-
+# floor lamp
 floorLampModel = ModelInfo()
 floorLampModel.name = "floorLamp"
 floorLampModel.path = "models/floor_lamp.fbx"
@@ -138,7 +141,7 @@ floorLamp2.setEffect("textured -C")
 everything.addChild(floorLamp2)
 floorLamp2.setPosition(3, 0, -0.4)
 
-
+# dragon balls
 dbModel = ModelInfo()
 dbModel.name = "dragonBalls"
 dbModel.path = "models/db.fbx"
@@ -153,13 +156,6 @@ dragonBalls.setPosition(30, 0, -5.0)
 
 
 
-
-
-
-# coordinate system from the user's point of view at the work tablen
-# +X to the right
-# +Y up
-# +Z behind me
 
 
 # add some lights
@@ -208,11 +204,14 @@ gongSound = se.loadSoundFromFile('gongSound', 'SOUNDS/gong.wav')
 def addMusic(instance, vol):
         time.sleep(1)
         simusic = SoundInstance(instance)
-        simusic.setPosition(house.getBoundCenter())
+        houseCenter = house.getBoundCenter()
+        houseCenter.y = 1
+        simusic.setPosition(houseCenter)
+       
         simusic.setLoop(True)
         simusic.setVolume(vol)
-        simusic.playStereo()
-        simusic.setEnvironmentSound(False)
+        simusic.play()
+        simusic.setEnvironmentSound(True)
         return(simusic)
         
 def addSound(instance, vol):
@@ -225,6 +224,8 @@ def addSound(instance, vol):
         sisound.setEnvironmentSound(True)
         return(sisound)
         
+
+
 bgMusic = addMusic(ambientMusic, BGMUSIC_VOL)
 
 
@@ -240,7 +241,7 @@ def scaleEverything(scale):
         global GLOBAL_SCALE
         GLOBAL_SCALE = scale
         everything.setScale(scale, scale, scale)
-        ToggleInteract.Init(scale*2)
+        ToggleInteract.Init(scale * INTERACT_DIST)
         
         ctl = cam.getController()
         ctl.setSpeed(scale * NAVI_SPEED_MOD)
@@ -303,7 +304,7 @@ mm = MenuManager.createAndInitialize()
 menu = mm.getMainMenu()
 mm.setMainMenu(menu)
 
-positionMenu = mm.createMenu("positionMenu")
+#positionMenu = mm.createMenu("positionMenu")
 positionMenu = menu.addSubMenu("Teleport")
 
 btnTeleportBacktDoor = positionMenu.addButton("Back Door", "teleportBackDoor()")
@@ -312,7 +313,7 @@ btnTeleportGarage    = positionMenu.addButton("Garage", "teleportGarage()")
 btnTeleportFuton     = positionMenu.addButton("Futon", "teleportFuton()")
 
 
-navMenu = mm.createMenu("navMenu")
+#navMenu = mm.createMenu("navMenu")
 navMenu = menu.addSubMenu("Navigation Mode")
 
 btnHuman = navMenu.addButton("Human", "setHumanMode()")
@@ -334,28 +335,26 @@ class LampStateMgr:
                 
         def __init__(self, lampObject):
                 self.lamp = lampObject
-                #self.lampOn = False
                 self.light = Light.create()
                 self.light.setLightType(LightType.Point)
-                self.light.setAttenuation(1, 1, 2);
+                self.light.setAttenuation(0.5, 0.5, 0.5);
                 self.light.setColor(Color(0.9, 0.4, 0.4, 1))
                 self.light.setEnabled(False)
                 self.lamp.addChild(self.light)
                 self.light.setPosition(Vector3(0, self.lamp.getBoundRadius(), 0))
-                #self.light.setPosition(self.lamp.getBoundCenter())
                         
         
 
 class SoundSrc:
         
-        def __init__(self, sceneObj, sound, boolLoop, boolStopAmbient, boolHasAction):
+        def __init__(self, sceneObj, sound, vol, boolLoop, boolStopAmbient, boolHasAction):
                 self.obj = sceneObj
                 
                 self.ha = boolHasAction
                 self.sa = boolStopAmbient
                 self.sound = SoundInstance(sound)
                 self.sound.setLoop(boolLoop)
-                self.sound.setVolume(0.2)
+                self.sound.setVolume(vol)
                 self.sound.setEnvironmentSound(True)
                 
                 if (not self.ha):
@@ -425,16 +424,17 @@ def onUpdate(frame, t, dt):
 
 
 
-ToggleInteract.Init(2)
-#ToggleInteract.Add(turntable, 0)
+ToggleInteract.Init(INTERACT_DIST)
+
+# add items for interaction
 ToggleInteract.Add(floorLamp, LampStateMgr(floorLamp))
 ToggleInteract.Add(floorLamp2, LampStateMgr(floorLamp2))
-ToggleInteract.Add(floorLamp, SoundSrc(floorLamp, gongSound, False, False, True))
-ToggleInteract.Add(floorLamp2, SoundSrc(floorLamp2, gongSound, False, False, True))
+ToggleInteract.Add(floorLamp, SoundSrc(floorLamp, gongSound, 0.5,  False, False, True))
+ToggleInteract.Add(floorLamp2, SoundSrc(floorLamp2, gongSound, 0.5, False, False, True))
 
-ToggleInteract.Add(turntable, SoundSrc(speaker1, recordMusic, False, True, True))
-ToggleInteract.Add(turntable, SoundSrc(speaker2, recordMusic, False, True, True))
-ToggleInteract.Add(None, SoundSrc(dragonBalls, twinkleSound, True, False, False))
+ToggleInteract.Add(turntable, SoundSrc(speaker1, recordMusic, 0.2, False, True, True))
+ToggleInteract.Add(turntable, SoundSrc(speaker2, recordMusic, 0.2, False, True, True))
+ToggleInteract.Add(None, SoundSrc(dragonBalls, twinkleSound, 0.2, True, False, False))
 
 
 # set walkabout settings
@@ -472,6 +472,7 @@ def handleEvent():
 
 setEventFunction(handleEvent)
 
+# start with human mode
 setHumanMode()
 
 
